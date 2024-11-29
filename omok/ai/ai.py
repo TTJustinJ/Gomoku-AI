@@ -2,7 +2,7 @@ from threading import Thread
 from time import sleep
 from omok.ai.minmax import MinMax
 # from omok.ai.network import Network
-# from omok.ai.rl import RL
+from omok.ai.randomwalk import RandomWalkAI
 from omok.core.board import Board
 
 class AI:
@@ -20,8 +20,8 @@ class AI:
             self.board.print('Invalid status condition for AI')
         elif len(self.threads) == 1 and status_condition == self.threads[0][1]:
             self.board.print('Cannot create duplicate AI threads with the same status condition')
-        elif ai_type != 'minmax' and ai_type != 'network' and ai_type != 'rl':
-            self.board.print('Invalid AI type; must be either "minmax" or "network" or "rl"')
+        elif ai_type != 'minmax' and ai_type != 'randomwalk':
+            self.board.print('Invalid AI type; must be either "minmax" or "randomwalk"')
         else:
             self.threads.append((Thread(target=lambda : self.play(status_condition, ai_type)), status_condition))
             self.board.print('Omok AI loaded with condition ' + str(status_condition))
@@ -40,9 +40,11 @@ class AI:
 
     def play(self, status_condition, ai_type):
         if ai_type == 'minmax':
+            print('minimax')
             algorithm = MinMax()
-        # elif ai_type == 'network':
-        #     algorithm = Network('omok/ai/models_network/standard.npy')
+        elif ai_type == 'randomwalk':
+            print('randomwalk')
+            algorithm = RandomWalkAI()
         # else:
         #     algorithm = RL(self.board.height, self.board.width, status_condition)
         sleep(2.0) # To prevent it from starting before GUI loads up
