@@ -7,8 +7,9 @@ def run():
     boardheight = 15
     board = Board(width=boardwidth, height=boardheight)
     ai = AI(board)
-    ai.load(board.WHITE_TURN, 'randomwalk')
-    ai.load(board.BLACK_TURN, 'minmax')
+    ai.load(board.BLACK_TURN, 'randomwalk')
+    ai.load(board.WHITE_TURN, 'genetic')
+    # ai.load(board.BLACK_TURN, 'minmax')
     ai.start()
     GUI(board)
     ai.stop()
