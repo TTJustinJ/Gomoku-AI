@@ -2,6 +2,8 @@ import random
 from copy import deepcopy
 from omok.core.board import Board
 from omok.core.rules import Rules
+import time
+import omok.time_arrays
 
 
 class RandomWalkAI:
@@ -39,12 +41,16 @@ class RandomWalkAI:
 
         best_move = None
         best_score = float('-inf')
-
+        start_time = time.time()
         for _ in range(RandomWalkAI.MAX_RESTARTS):
             move, score = self.random_walk_with_restart(padded_board, padded_empty_slots, is_black_turn)
             if score > best_score:
                 best_move, best_score = move, score
-
+        end_time = time.time()
+        decision_time = end_time - start_time
+        print("randomwalk_" + str(RandomWalkAI.MAX_SIMULATIONS) +"decision time:" + str(decision_time))
+        omok.time_arrays.add_to_randomwalk_array(decision_time)
+        omok.time_arrays.print_randomwalk_array()
         return map(lambda x: x - 1, best_move)
 
     def random_walk_with_restart(self, board, empty_slots, is_black_turn):
