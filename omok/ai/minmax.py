@@ -1,6 +1,8 @@
 from copy import deepcopy
 from omok.core.board import Board
 from omok.core.rules import Rules
+import omok.time_arrays
+import time
 
 class MinMax:
     MAX_DEPTH = 2
@@ -78,10 +80,15 @@ class MinMax:
 
         for empty_slot in empty_slots:
             padded_empty_slots.add((empty_slot[0] + 1, empty_slot[1] + 1))
-
+        start_time = time.time()
         next_move = self.alphabeta(padded_board, padded_empty_slots, 
                                     0, MinMax.SEARCH_AREA, 1000000.0, -1000000.0, 
                                     condition == Board.BLACK_TURN)
+        end_time = time.time()
+        decision_time = end_time - start_time
+        print("minmax decision time:"+ str(decision_time))
+        omok.time_arrays.add_to_minmax_array(decision_time)
+        omok.time_arrays.print_minmax_array()
         return map(lambda x: x - 1, next_move)
 
     # Black will try to minimize towards -1, and white maximize towards 1
