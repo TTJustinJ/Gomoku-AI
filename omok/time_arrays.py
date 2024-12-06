@@ -1,6 +1,7 @@
 # 定义全局变量
 minmax_array = []
 randomwalk_array = []
+MCTS_AI_array = []
 
 def add_to_minmax_array(data):
     """向全局数组中添加数据"""
@@ -31,6 +32,19 @@ def calculate_randomwalk_avg():
     global randomwalk_array
     res = sum(randomwalk_array) / len(randomwalk_array) if randomwalk_array else 0
     return res
+def add_to_MCTS_AI_array(data):
+    global MCTS_AI_array
+    MCTS_AI_array.append(data)
+
+def print_MCTS_AI_array():
+    global MCTS_AI_array
+    print(MCTS_AI_array)
+
+def calculate_MCTS_AI_avg():
+    global MCTS_AI_array
+    res = sum(MCTS_AI_array) / len(MCTS_AI_array) if MCTS_AI_array else 0
+    return res
+
 # 使用全局数组
 # add_to_global_array(10)
 # add_to_global_array(20)

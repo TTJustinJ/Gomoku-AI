@@ -4,7 +4,7 @@ from omok.ai.minmax import MinMax
 # from omok.ai.network import Network
 from omok.ai.randomwalk import RandomWalkAI
 from omok.core.board import Board
-from omok.ai.genetic import GeneticAI
+from omok.ai.MCTS_AI import MCTS_AI
 
 class AI:
     """Omok AI Runner"""
@@ -21,8 +21,8 @@ class AI:
             self.board.print('Invalid status condition for AI')
         elif len(self.threads) == 1 and status_condition == self.threads[0][1]:
             self.board.print('Cannot create duplicate AI threads with the same status condition')
-        elif ai_type != 'minmax' and ai_type != 'randomwalk' and ai_type != 'genetic':
-            self.board.print('Invalid AI type; must be either "minmax", "randomwalk" or "genetic"')
+        elif ai_type != 'minmax' and ai_type != 'randomwalk' and ai_type != 'MCTS_AI':
+            self.board.print('Invalid AI type; must be either "minmax", "randomwalk" or "MCTS_AI"')
         else:
             self.threads.append((Thread(target=lambda : self.play(status_condition, ai_type)), status_condition))
             self.board.print('Omok AI loaded with condition ' + str(status_condition))
@@ -46,9 +46,9 @@ class AI:
         elif ai_type == 'randomwalk':
             print('randomwalk')
             algorithm = RandomWalkAI()
-        elif ai_type == 'genetic':
-            print('genetic')
-            algorithm = GeneticAI()
+        elif ai_type == 'MCTS_AI':
+            print('MCTS_AI')
+            algorithm = MCTS_AI()
         # else:
         #     algorithm = RL(self.board.height, self.board.width, status_condition)
         sleep(2.0) # To prevent it from starting before GUI loads up
