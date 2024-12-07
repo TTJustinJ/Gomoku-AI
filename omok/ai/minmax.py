@@ -4,164 +4,237 @@ from omok.core.rules import Rules
 import omok.time_arrays
 import time
 
+
 class MinMax:
     MAX_DEPTH = 2
-    SEARCH_AREA = 1
-
-    @staticmethod
-    def pad(board):
-        board = deepcopy(board)
-        pad = '\0'
-        
-        horizontal_padding = [pad] * len(board[0])
-        board.insert(0, list(horizontal_padding))
-        board.append(list(horizontal_padding))
-        
-        for i in range(len(board)):
-            board[i].insert(0, pad)
-            board[i].append(pad)
-
-        return board
+    SEARCH_RADIUS = 1
 
     def __init__(self):
         self.criteria = None
-        self.initiate_criteria()
-    
-    def initiate_criteria(self):
+        self._setup_criteria()
+
+    @staticmethod
+    def _pad_board(original_board):
         """
-        Sets up criteria for 5-slot row patterns
-
-        This criteria only judges the likeliness of filling up all 5 slots with the same color
-
-        ex. BBEBB = Very likely to be filled, so high score
-            BWEEB = Will never be filled since B and W are mixed, so 0 score
-        
-        Hence, it must be checked what color surrounds the 5-slot pattern before using it.
-
-        Criteria is stored as class variable, in dictionary structure of criteria[pattern] = value
+        Return a padded version of the board, adding a layer of blank padding around all edges.
         """
-        if self.criteria != None:
+        padded = deepcopy(original_board)
+        pad_char = '\0'
+
+        width = len(padded[0])
+        padded.insert(0, [pad_char] * width)
+        padded.append([pad_char] * width)
+
+        for i in range(len(padded)):
+            padded[i].insert(0, pad_char)
+            padded[i].append(pad_char)
+
+        return padded
+
+    def _setup_criteria(self):
+        """
+        Prepare a dictionary (self.criteria) mapping all 5-slot patterns to an evaluation value.
+
+        Patterns that can lead to a five-in-a-row are given higher absolute values.
+        Patterns mixing Black and White are given zero, as they won't form a pure line of five.
+        """
+        if self.criteria is not None:
             return
 
-        self.criteria = dict()
-        charset = [Board.EMPTY_SLOT, Board.BLACK_SLOT, Board.WHITE_SLOT]
+        self.criteria = {}
+        slots = [Board.EMPTY_SLOT, Board.BLACK_SLOT, Board.WHITE_SLOT]
 
-        for a in charset:
-            for b in charset:
-                for c in charset:
-                    for d in charset:
-                        for e in charset:
-                            pattern = a + b + c + d + e
-                            self.criteria[pattern] = 0.0
+        # Generate all possible patterns of length 5
+        for a in slots:
+            for b in slots:
+                for c in slots:
+                    for d in slots:
+                        for e in slots:
+                            self.criteria[a + b + c + d + e] = 0.0
 
+        # Assign values to each pattern
         for pattern in self.criteria.keys():
-            B_count = pattern.count(charset[1])
-            W_count = pattern.count(charset[2])
-            if B_count > 0 and W_count > 0:
-                value = 0.0
-            elif B_count == 0 and W_count == 0:
-                value = 0.0
+            black_count = pattern.count(Board.BLACK_SLOT)
+            white_count = pattern.count(Board.WHITE_SLOT)
+
+            if black_count > 0 and white_count > 0:
+                # Mixed colors, no potential for a uniform five-in-a-row
+                val = 0.0
+            elif black_count == 0 and white_count == 0:
+                # All empty
+                val = 0.0
             else:
-                if B_count > 0:
-                    value = -1.0
+                # Either all black or all white (with empty)
+                if black_count > 0:
+                    # Negative value for black advantage
+                    val = -1.0
+                    segment_length = black_count
                 else:
-                    value = 1.0
-                count = B_count + W_count # one of these is 0
-                value *= 13**(count - 3)
-            self.criteria[pattern] = value
+                    # Positive value for white advantage
+                    val = 1.0
+                    segment_length = white_count
+
+                # Exponential factor based on how many stones already in the pattern
+                val *= (13 ** (segment_length - 3))
+
+            self.criteria[pattern] = val
 
     def decide_next_move(self, board_instance):
+        """
+        Use a limited-depth MinMax search (with alpha-beta pruning logic) to choose the next move.
+        """
         board = board_instance.board
         empty_slots = board_instance.empty_slots
-        condition = board_instance.status
-        
-        padded_board = MinMax.pad(board)
-        padded_empty_slots = set()
+        turn_condition = board_instance.status
 
-        for empty_slot in empty_slots:
-            padded_empty_slots.add((empty_slot[0] + 1, empty_slot[1] + 1))
-        start_time = time.time()
-        next_move = self.alphabeta(padded_board, padded_empty_slots, 
-                                    0, MinMax.SEARCH_AREA, 1000000.0, -1000000.0, 
-                                    condition == Board.BLACK_TURN)
-        end_time = time.time()
-        decision_time = end_time - start_time
-        print("minmax decision time:"+ str(decision_time))
-        omok.time_arrays.add_to_minmax_array(decision_time)
+        padded = self._pad_board(board)
+        padded_empty = {(x + 1, y + 1) for (x, y) in empty_slots}
+
+        start = time.time()
+        # For the alphabeta: we maintain the original logic, just re-structure code slightly.
+        best_choice = self._alphabeta(
+            padded,
+            padded_empty,
+            depth=0,
+            search_area=self.SEARCH_RADIUS,
+            # Keeping the original logic where 'min' parameter was a large positive number and 'max' was large negative
+            alpha=1000000.0,  # previously called 'min'
+            beta=-1000000.0,  # previously called 'max'
+            for_black=(turn_condition == Board.BLACK_TURN)
+        )
+        end = time.time()
+
+        elapsed = end - start
+        print("minmax decision time:" + str(elapsed))
+        omok.time_arrays.add_to_minmax_array(elapsed)
         omok.time_arrays.print_minmax_array()
-        return map(lambda x: x - 1, next_move)
 
-    # Black will try to minimize towards -1, and white maximize towards 1
-    def alphabeta(self, board, empty_slots, depth, search_area, min, max, for_black):
-        if depth == MinMax.MAX_DEPTH:
-            return self.evaluate_board(board)
-        for move in self.next_moves(board, empty_slots, search_area):
+        # Convert coordinates back to original indexing
+        return map(lambda coord: coord - 1, best_choice)
+
+    def _alphabeta(self, board, empty_slots, depth, search_area, alpha, beta, for_black):
+        """
+        Perform a recursive MinMax-style search:
+        - If for_black is True, we are minimizing scores (aiming towards negative).
+        - If for_black is False, we are maximizing scores (aiming towards positive).
+
+        At the top level (depth 0), return the best move.
+        At deeper levels, return the best achievable score at that state.
+        """
+        # Termination condition
+        if depth == self.MAX_DEPTH:
+            return self._evaluate(board)
+
+        candidate_moves = self._get_candidate_moves(board, empty_slots, search_area)
+        chosen_move = None
+
+        for move in candidate_moves:
             next_board = deepcopy(board)
-            next_board[move[0]][move[1]] = Board.BLACK_SLOT if (for_black) else Board.WHITE_SLOT
-            next_empty_slots = deepcopy(empty_slots)
-            next_empty_slots.remove(move)
+            next_board[move[0]][move[1]] = Board.BLACK_SLOT if for_black else Board.WHITE_SLOT
 
-            value = 0.0 if (len(next_empty_slots) == 0) else\
-                        self.alphabeta(next_board, next_empty_slots, 
-                                        depth + 1, search_area, 
-                                        min, max, not for_black)
-            if value == None:
+            # Update empty slots for next state
+            next_empty = deepcopy(empty_slots)
+            next_empty.remove(move)
+
+            # If no further moves, assign a baseline value
+            if len(next_empty) == 0:
+                value = 0.0
+            else:
+                value = self._alphabeta(
+                    next_board,
+                    next_empty,
+                    depth + 1,
+                    search_area,
+                    alpha,
+                    beta,
+                    not for_black
+                )
+
+            if value is None:
                 continue
+
+            # If it's Black's turn, we are "minimizing"
             if for_black:
-                if min > value:
-                    best_move = move
-                    min = value
-                if min <= max:
+                if value < alpha:
+                    alpha = value
+                    chosen_move = move
+                if alpha <= beta:
+                    # Pruning condition
                     break
             else:
-                if max < value:
-                    best_move = move
-                    max = value
-                if max >= min:
+                # White's turn, we are "maximizing"
+                if value > beta:
+                    beta = value
+                    chosen_move = move
+                if beta >= alpha:
+                    # Pruning condition
                     break
 
-        if depth == 0:
-            return best_move
-        else:
-            return min if (for_black) else max
+        # If we are at the root, we return the chosen move rather than just the value
+        return chosen_move if depth == 0 else (alpha if for_black else beta)
 
-    def next_moves(self, board, empty_slots, search_area):
-        """Generates possible next moves in given area"""
-        moves = set()
-        for i in range(1, len(board) - 1):
-            for j in range(1, len(board[0]) - 1):
-                if not board[i][j] == Board.EMPTY_SLOT:
-                    for k in range(-search_area, search_area + 1):
-                        for l in range(-search_area, search_area + 1):
-                            move = (i + k, j + l)
-                            if move in empty_slots:
-                                moves.add(move)
+    def _get_candidate_moves(self, board, empty_slots, search_area):
+        """
+        Identify potential moves by looking around existing stones within a certain radius.
+        If no candidate found, fallback to placing in the middle.
+        """
+        possible_moves = set()
+        rows = len(board)
+        cols = len(board[0])
 
-        if len(moves) == 0:
-            moves.add((int(len(board) / 2), int(len(board[0]) / 2)))
-        
-        return moves
+        for i in range(1, rows - 1):
+            for j in range(1, cols - 1):
+                if board[i][j] != Board.EMPTY_SLOT:
+                    for dx in range(-search_area, search_area + 1):
+                        for dy in range(-search_area, search_area + 1):
+                            candidate = (i + dx, j + dy)
+                            if candidate in empty_slots:
+                                possible_moves.add(candidate)
 
-    def evaluate_board(self, board):
-        value = 0.0
-        for i in range(3, len(board) - 3):
-            for j in range(3, len(board[0]) - 3):
-                value += self.evaluate_point(board, i, j)
-        return value
-        
-    def evaluate_point(self, board, i, j):
-        value = 0.0
+        # If no moves found, choose the center as fallback
+        if not possible_moves:
+            center = (rows // 2, cols // 2)
+            possible_moves.add(center)
+
+        return possible_moves
+
+    def _evaluate(self, board):
+        """
+        Evaluate the entire board by summing contributions from each relevant point.
+        """
+        total = 0.0
+        max_row = len(board) - 3
+        max_col = len(board[0]) - 3
+
+        for x in range(3, max_row):
+            for y in range(3, max_col):
+                total += self._evaluate_point(board, x, y)
+
+        return total
+
+    def _evaluate_point(self, board, i, j):
+        """
+        Evaluate a single point by examining lines in all directions and applying the criteria.
+        """
+        result = 0.0
         for direction in Rules.DIRECTIONS.values():
-            str_line = ''
-            for index in range(-3, 4):
-                _i = i + index * direction[0]
-                _j = j + index * direction[1]
-                str_line += board[_i][_j]
-            line_value = self.criteria.get(str_line[1:6], 0.0)
-            end = str_line[::6]
-            if line_value < 0 and Board.BLACK_SLOT in end:
-                line_value = 0
-            elif line_value > 0 and Board.WHITE_SLOT in end:
-                line_value = 0
-            value += line_value
-        return value
+            segment = ''
+            # Build a 7-length segment around the point (i,j)
+            for step in range(-3, 4):
+                row = i + step * direction[0]
+                col = j + step * direction[1]
+                segment += board[row][col]
+
+            # Focus on the middle 5 characters
+            middle_five = segment[1:6]
+            val = self.criteria.get(middle_five, 0.0)
+
+            # Check endpoints
+            endpoints = segment[::6]
+            if val < 0 and Board.BLACK_SLOT in endpoints:
+                val = 0
+            elif val > 0 and Board.WHITE_SLOT in endpoints:
+                val = 0
+
+            result += val
+        return result
