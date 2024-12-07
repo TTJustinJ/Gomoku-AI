@@ -10,6 +10,12 @@ We both implemented the timer for each class and revised the run.py to better pl
 
 
 ## How to run:
+First cd to the desired directory, then git clone our repository:
+
+```commandline
+git clone https://github.com/TTJustinJ/Gomoku-AI.git
+```
+and type the following on your command line
 ```commandline
 python run.py
 ```
