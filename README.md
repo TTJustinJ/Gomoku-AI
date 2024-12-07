@@ -62,9 +62,7 @@ There are no special environments needed in this project. But we recommended you
 Weizhe Jiao used ChatGPT to assist with the code of MCTS. All the contributions mentioned above are 
 implementations by us. Minimax was adopted but refined, and the Gomoku game board was designed by 
 [this repository](https://github.com/StuartSul/Five_in_a_Row/tree/master/omok/core). 
-https://github.com/StuartSul/Five_in_a_Row/tree/master/omok/core
-
-Thanks to my roommate to test these AI methods' intelligence. 
+https://github.com/StuartSul/Five_in_a_Row/tree/master/omok/core 
 
 
 
