@@ -64,6 +64,8 @@ implementations by us. Minimax was adopted but refined, and the Gomoku game boar
 [this repository](https://github.com/StuartSul/Five_in_a_Row/tree/master/omok/core). 
 https://github.com/StuartSul/Five_in_a_Row/tree/master/omok/core
 
+Thanks to my roommate to test these AI methods' intelligence. 
+
 
 
 
