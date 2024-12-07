@@ -11,7 +11,7 @@ def run(AI_black, AI_white):
     board = Board(width=boardwidth, height=boardheight)
     ai = AI(board)
     ai.load(board.WHITE_TURN, AI_white)
-    ai.load(board.BLACK_TURN, AI_black)
+    # ai.load(board.BLACK_TURN, AI_black)
     ai.start()
     GUI(board)
     ai.stop()

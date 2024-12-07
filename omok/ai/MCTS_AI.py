@@ -24,7 +24,7 @@ class MCTSNode:
 
 class MCTS_AI:
     MAX_SIMULATIONS = 1000  # Increase if needed
-    MAX_TIME = 10  # Limit thinking time in seconds for demonstration, adjust as needed
+    MAX_TIME = 5  # Limit thinking time in seconds for demonstration, adjust as needed
     SEARCH_AREA = 1
 
     def __init__(self):

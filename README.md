@@ -42,6 +42,7 @@ In this picture, the only AI activated is the one we chose as black side (MCTS i
 
 You can play with each AI by changing the corresponding setting and choose either side by comment one of the ai.
 
+However, make sure there are black and white AI initialized in run.py. 
 
 ### The hyperparameters
 
